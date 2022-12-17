@@ -1,13 +1,15 @@
-class Department {
+abstract class Department {
+  static fiscalYear = 2022;
   // private employees: string[] = []; //型指定
   protected employees: string[] = []; //型指定
 
-  constructor(private readonly id: string, public name: string) {
+  static createEmployee(name: string) {
+    return { name: name };
   }
 
-  describe(this: Department) {
-    console.log(`Department (${this.id}) : ${this.name}`);
+  constructor(protected readonly id: string, public name: string) {
   }
+  abstract describe(this: Department): void;
 
   addEmployee(employee: string) {
     this.employees.push(employee);
@@ -31,6 +33,11 @@ class ITDepartment extends Department {
     super(id, 'IT');
     this.admins = admins;
   }
+
+  //ベースクラスでabstractを定義したため使うことを矯正される
+  describe() {
+    console.log('IT部門 - ID: ' + this.id);
+  }
 }
 
 const it = new ITDepartment('d1', ['Max']); //インスタンス化して {name: Accounting} オブジェクトが作成される
@@ -53,6 +60,7 @@ console.log(it);
 //Departmentクラスを継承してAccountingDepartmentクラスを作成
 class AccountingDepartment extends Department {
   private lastReport: string;
+  private static instance: AccountingDepartment;
 
   //Getter : 外部からプライベートのプロパティにアクセスできる
   get mostRecentReport() {
@@ -70,7 +78,8 @@ class AccountingDepartment extends Department {
     this.addReport(value);
   }
 
-  constructor(id: string, private reports: string[]) { //privateの独自のプロパティを追加
+  //private コンストラクター とすることでインスタンス化されない
+  private constructor(id: string, private reports: string[]) { //privateの独自のプロパティを追加
     super(id, 'Accounting'); //idプロパティはそのまま受け取り、nameプロパティは'Accounting'に変更
     this.lastReport = reports[0];
   }
@@ -78,6 +87,19 @@ class AccountingDepartment extends Department {
   // id: 'd2';
   // name: 'Accounting';
   // reports: [];
+
+  //一度だけインスタンス化できる関数
+  static getInstance() {
+    if (AccountingDepartment.instance) {
+      return this.instance;
+    }
+    this.instance = new AccountingDepartment('d2', []);
+    return this.instance;
+  }
+
+  describe() {
+    console.log("会計部門 - ID: " + this.id);
+  }
 
   addReport(text: string) {
     this.reports.push(text);
@@ -97,14 +119,20 @@ class AccountingDepartment extends Department {
   }
 }
 
-const accounting = new AccountingDepartment('d2', []);
+// const accounting = new AccountingDepartment('d2', []);
+const accounting = AccountingDepartment.getInstance();
 
 
 accounting.mostRecentReport = '通気会計レポート'; //Setter呼び出し。reports:['通気会計レポート']
 accounting.addReport('Something');   //reports: ['通気会計レポート', 'Something'];
 console.log(accounting.mostRecentReport); //Getter呼び出し
-accounting.printReports();
+// accounting.printReports();
 accounting.addEmployee('Max'); //returnではじかれる
 accounting.addEmployee('Youya'); //pushで追加される
 
-accounting.printEmployeeInformation();
+// accounting.printEmployeeInformation();
+accounting.describe();
+
+//インスタンス化しなくても直接createEmployeeメソッドにアクセスできる。
+const employee1 = Department.createEmployee('Yamada');
+console.log(employee1, Department.fiscalYear);
